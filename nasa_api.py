@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import time
+import logging
 from functools import lru_cache
 from pathlib import Path
 from typing import Literal
@@ -12,6 +13,8 @@ import io
 
 import pandas as pd
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 MISSION_TABLE_MAP: dict[str, str] = {
     "kepler": "cumulative",  # Ana cumulative tablo - tüm fiziksel parametreleri içerir
@@ -20,6 +23,7 @@ MISSION_TABLE_MAP: dict[str, str] = {
 BASE_URL = "https://exoplanetarchive.ipac.caltech.edu/TAP/sync"
 CACHE_DIR = Path(os.getenv("EXOPLANET_CACHE", "./cache"))
 CACHE_DIR.mkdir(parents=True, exist_ok=True)
+logger = logging.getLogger(__name__)
 
 
 class NASAExoplanetAPIError(RuntimeError):
@@ -44,6 +48,51 @@ def _build_query(mission: Literal["kepler"], limit: int) -> str:
     return query
 
 
+def _get_http_session(max_retries: int = 5, backoff: float = 0.6) -> requests.Session:
+    """Create a requests session with retry and backoff for resilient downloads."""
+    retry = Retry(
+        total=max_retries,
+        connect=max_retries,
+        read=max_retries,
+        backoff_factor=backoff,
+        status_forcelist=(429, 500, 502, 503, 504),
+        allowed_methods=frozenset(["GET"]),
+        raise_on_status=False,
+    )
+    adapter = HTTPAdapter(max_retries=retry)
+    session = requests.Session()
+    session.mount("http://", adapter)
+    session.mount("https://", adapter)
+    session.headers.update({
+        "User-Agent": "ExoplanetAI/1.0 (+https://example.org)",
+        "Accept": "text/csv,application/json;q=0.9,*/*;q=0.8",
+    })
+    return session
+
+
+def _load_best_cache(mission: str, limit: int) -> pd.DataFrame | None:
+    """Load the freshest available cache for a mission, trimming to limit if needed."""
+    # Exact cache
+    exact = CACHE_DIR / f"{mission}_latest_{limit}.parquet"
+    if exact.exists():
+        try:
+            df = pd.read_parquet(exact)
+            return df
+        except Exception as e:
+            logger.warning("Cache read failed for %s: %s", exact, e)
+    # Fallback to any mission cache (pick newest by mtime)
+    candidates = sorted(CACHE_DIR.glob(f"{mission}_latest_*.parquet"), key=lambda p: p.stat().st_mtime, reverse=True)
+    for path in candidates:
+        try:
+            df = pd.read_parquet(path)
+            if limit and len(df) > limit:
+                return df.head(limit).copy()
+            return df
+        except Exception as e:
+            logger.warning("Cache read failed for %s: %s", path, e)
+    return None
+
+
 @lru_cache(maxsize=12)
 def fetch_latest_catalog(
     mission: Literal["kepler"] = "kepler",
@@ -64,18 +113,34 @@ def fetch_latest_catalog(
 
     params = {
         "query": _build_query(mission, limit),
-        "format": "csv"
+        "format": "csv",
     }
 
-    response = requests.get(BASE_URL, params=params, timeout=30)
-    if response.status_code != 200:
+    session = _get_http_session()
+    try:
+        response = session.get(BASE_URL, params=params, timeout=30)
+        if response.status_code != 200:
+            raise NASAExoplanetAPIError(
+                f"NASA Exoplanet Archive request failed ({response.status_code}): {response.text[:200]}"
+            )
+        df = pd.read_csv(io.StringIO(response.text))
+        # Persist fresh cache
+        try:
+            df.to_parquet(cache_file, index=False)
+        except Exception as e:
+            logger.warning("Failed to write cache %s: %s", cache_file, e)
+        return df
+    except Exception as e:
+        logger.warning("NASA data fetch failed: %s", e)
+        # Fallback: stale cache if available
+        cached = _load_best_cache(mission, limit)
+        if cached is not None:
+            logger.info("Falling back to cached dataset for mission '%s' (rows=%d)", mission, len(cached))
+            return cached
+        # As a last resort, raise a meaningful error
         raise NASAExoplanetAPIError(
-            f"NASA Exoplanet Archive request failed ({response.status_code}): {response.text[:200]}"
-        )
-
-    df = pd.read_csv(io.StringIO(response.text))
-    df.to_parquet(cache_file, index=False)
-    return df
+            "NASA verisi alınamadı ve geçerli bir önbellek bulunamadı. Lütfen daha sonra tekrar deneyin."
+        ) from e
 
 
 def get_latest_dataframe(
