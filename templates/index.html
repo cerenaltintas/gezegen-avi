@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌌 Ötegezegen Keşif Sistemi</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .tabs {
+            display: flex;
+            background: #f5f5f5;
+            border-bottom: 2px solid #ddd;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+            border: none;
+            background: none;
+            font-size: 1em;
+        }
+
+        .tab:hover {
+            background: #e0e0e0;
+        }
+
+        .tab.active {
+            background: white;
+            color: #667eea;
+            border-bottom: 3px solid #667eea;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.5s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .form-group input, .form-group select {
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-group small {
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .btn {
+            padding: 15px 40px;
+            font-size: 1.1em;
+            font-weight: bold;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .result-box {
+            margin-top: 30px;
+            padding: 30px;
+            border-radius: 10px;
+            display: none;
+            animation: slideDown 0.5s;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-box.exoplanet {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+        }
+
+        .result-box.not-exoplanet {
+            background: linear-gradient(135deg, #ee0979 0%, #ff6a00 100%);
+            color: white;
+        }
+
+        .result-box h2 {
+            font-size: 2em;
+            margin-bottom: 15px;
+        }
+
+        .result-box .probability {
+            font-size: 1.5em;
+            margin: 10px 0;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: white;
+            transition: width 1s ease-out;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .file-upload {
+            border: 3px dashed #667eea;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 20px;
+        }
+
+        .file-upload:hover {
+            background: #f8f9ff;
+            border-color: #764ba2;
+        }
+
+        .file-upload input {
+            display: none;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-card h3 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .stat-card p {
+            font-size: 1em;
+            opacity: 0.9;
+        }
+
+        .feature-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .feature-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .feature-item strong {
+            color: #667eea;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .info-box {
+            background: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .info-box h3 {
+            color: #2196F3;
+            margin-bottom: 10px;
+        }
+
+        footer {
+            background: #2a5298;
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌌 Ötegezegen Keşif Sistemi</h1>
+            <p>Profesyonel veri analitiği ile ötegezegen tespit sürecinizi modernleştirin.</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('manual')">📝 Manuel Giriş</button>
+            <button class="tab" onclick="showTab('csv')">📄 CSV Yükle</button>
+            <button class="tab" onclick="showTab('info')">ℹ️ Model Bilgileri</button>
+            <button class="tab" onclick="showTab('synth')">🧪 Veri Üretimi</button>
+        </div>
+
+        <div class="content">
+            <!-- Manuel Giriş Sekmesi -->
+            <div id="manual" class="tab-content active">
+                <div class="info-box">
+                    <h3>📊 Manuel Veri Girişi</h3>
+                    <p>Aşağıdaki formu doldurarak yeni bir gezegen adayının ötegezegen olup olmadığını tahmin edebilirsiniz. Tüm değerler opsiyoneldir; eksik değerler otomatik olarak işlenir.</p>
+                </div>
+
+                <form id="predictForm">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Yörünge Periyodu (gün)</label>
+                            <input type="number" step="any" name="koi_period" placeholder="örn: 3.52">
+                            <small>Gezegenin yıldızı çevreleme süresi</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Geçiş Derinliği (ppm)</label>
+                            <input type="number" step="any" name="koi_depth" placeholder="örn: 615.8">
+                            <small>Işık eğrisindeki düşüş miktarı</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Geçiş Süresi (saat)</label>
+                            <input type="number" step="any" name="koi_duration" placeholder="örn: 2.95">
+                            <small>Geçişin toplam süresi</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Gezegen Yarıçapı (Dünya yarıçapı)</label>
+                            <input type="number" step="any" name="koi_prad" placeholder="örn: 1.89">
+                            <small>Dünya yarıçapı cinsinden</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Gezegen-Yıldız Yarıçap Oranı</label>
+                            <input type="number" step="any" name="koi_ror" placeholder="örn: 0.0174">
+                            <small>Rp/R* oranı</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Denge Sıcaklığı (K)</label>
+                            <input type="number" step="any" name="koi_teq" placeholder="örn: 1284">
+                            <small>Kelvin cinsinden</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Güneş Işınımı</label>
+                            <input type="number" step="any" name="koi_insol" placeholder="örn: 62.3">
+                            <small>Dünya ışınımına göre</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Yıldız Sıcaklığı (K)</label>
+                            <input type="number" step="any" name="koi_steff" placeholder="örn: 5455">
+                            <small>Etkin sıcaklık</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Yıldız Yoğunluğu (g/cm³)</label>
+                            <input type="number" step="any" name="koi_srho" placeholder="örn: 4.11">
+                            <small>Gram/cm³ cinsinden</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Yıldız Yarıçapı (Güneş yarıçapı)</label>
+                            <input type="number" step="any" name="koi_srad" placeholder="örn: 0.927">
+                            <small>Güneş yarıçapı cinsinden</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Yıldız Yüzey Yerçekimi (log10)</label>
+                            <input type="number" step="any" name="koi_slogg" placeholder="örn: 4.467">
+                            <small>cm/s² cinsinden</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Etki Parametresi</label>
+                            <input type="number" step="any" name="koi_impact" placeholder="örn: 0.146">
+                            <small>Yörünge geometrisi</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Sinyal-Gürültü Oranı</label>
+                            <input type="number" step="any" name="koi_model_snr" placeholder="örn: 35.8">
+                            <small>Model SNR</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Gezegen Numarası</label>
+                            <input type="number" step="1" name="koi_tce_plnt_num" value="1" placeholder="örn: 1">
+                            <small>Sistemdeki gezegen sırası</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Transit Dışı FP Bayrağı</label>
+                            <select name="koi_fpflag_nt">
+                                <option value="0">0 - Hayır</option>
+                                <option value="1">1 - Evet</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Yıldız Tutulması FP Bayrağı</label>
+                            <select name="koi_fpflag_ss">
+                                <option value="0">0 - Hayır</option>
+                                <option value="1">1 - Evet</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Merkez Sapması FP Bayrağı</label>
+                            <select name="koi_fpflag_co">
+                                <option value="0">0 - Hayır</option>
+                                <option value="1">1 - Evet</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Kontaminasyon FP Bayrağı</label>
+                            <select name="koi_fpflag_ec">
+                                <option value="0">0 - Hayır</option>
+                                <option value="1">1 - Evet</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="text-align: center;">
+                        <button type="submit" class="btn btn-primary">🔮 Tahmin Et</button>
+                        <button type="reset" class="btn btn-secondary">🔄 Sıfırla</button>
+                    </div>
+                </form>
+
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p style="margin-top: 15px;">Tahmin yapılıyor...</p>
+                </div>
+
+                <div id="result" class="result-box"></div>
+            </div>
+
+            <!-- CSV Yükleme Sekmesi -->
+            <div id="csv" class="tab-content">
+                <div class="info-box">
+                    <h3>📁 Toplu Tahmin</h3>
+                    <p>CSV dosyası yükleyerek birden fazla gezegen adayı için toplu tahmin yapabilirsiniz. Dosyanız manuel girişteki özellikleri içermelidir.</p>
+                    
+                    <div style="margin-top: 15px; padding: 10px; background: #e3f2fd; border-left: 4px solid #2196F3; border-radius: 5px;">
+                        <strong>🔒 Güvenlik Önlemleri:</strong>
+                        <ul style="margin: 10px 0 0 20px;">
+                            <li>✅ Sadece CSV dosyaları kabul edilir</li>
+                            <li>✅ Maksimum dosya boyutu: 100 MB</li>
+                            <li>🔐 Hassas bilgiler otomatik olarak anonimleştirilir</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin: 20px 0;">
+                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                        <input type="checkbox" id="anonymizeData" checked style="width: 20px; height: 20px; cursor: pointer;">
+                        <span style="font-weight: bold;">🔒 Veriyi Anonimleştir</span>
+                    </label>
+                    <small style="display: block; margin-top: 5px; color: #666;">
+                        Hassas bilgiler (ID'ler, isimler, koordinatlar) otomatik olarak anonimleştirilir
+                    </small>
+                </div>
+
+                <div class="file-upload" onclick="document.getElementById('csvFile').click()">
+                    <h3>📤 CSV Dosyası Yükle</h3>
+                    <p>Dosyanızı buraya sürükleyin veya tıklayın</p>
+                    <p style="color: #999; font-size: 0.9em; margin-top: 5px;">Sadece .csv formatı</p>
+                    <input type="file" id="csvFile" accept=".csv" onchange="uploadCSV(this)">
+                </div>
+
+                <div class="loading" id="csvLoading">
+                    <div class="spinner"></div>
+                    <p style="margin-top: 15px;">Dosya işleniyor...</p>
+                </div>
+
+                <div id="csvResults"></div>
+            </div>
+
+            <!-- Model Bilgileri Sekmesi -->
+            <div id="info" class="tab-content">
+                <div class="info-box">
+                    <h3>🤖 Model Hakkında</h3>
+                    <p>Bu sistem, NASA Kepler misyonundan elde edilen verileri kullanarak XGBoost (Extreme Gradient Boosting) algoritması ile eğitilmiştir. Model, ötegezegen tespitinde yüksek doğruluk oranına sahiptir.</p>
+                </div>
+
+                <h2 style="margin: 30px 0 20px 0;">⭐ En Önemli Özellikler</h2>
+                <div id="featureList" class="feature-list">
+                    <p>Model bilgileri yükleniyor...</p>
+                </div>
+
+                <h2 style="margin: 30px 0 20px 0;">📊 Kullanılan Teknolojiler</h2>
+                <div class="feature-list">
+                    <div class="feature-item">
+                        <strong>XGBoost</strong><br>
+                        Gradient Boosting algoritması
+                    </div>
+                    <div class="feature-item">
+                        <strong>SMOTE</strong><br>
+                        Dengesiz veri dengeleme
+                    </div>
+                    <div class="feature-item">
+                        <strong>Scikit-learn</strong><br>
+                        Makine öğrenimi kütüphanesi
+                    </div>
+                    <div class="feature-item">
+                        <strong>Flask</strong><br>
+                        Web framework
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sentetik Veri Sekmesi -->
+            <div id="synth" class="tab-content">
+                <div class="info-box">
+                    <h3>🧪 Sentetik Veri Üretim Laboratuvarı</h3>
+                    <p>Gerçek Kepler dağılımına sadık kalarak yeni ötegezegen adayları üretmek için hibrit
+                       (Gauss karışımı + SMOTE) yaklaşımı kullanıyoruz. Bu veri setleri modelinizi güçlendirmek
+                       veya farklı senaryoları test etmek için idealdir.</p>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3>3</h3>
+                        <p>Üretim Stratejisi</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>0.99</h3>
+                        <p>Hedef ROC AUC</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>±1%</h3>
+                        <p>Sınıf Oranı Sapması</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>0.55</h3>
+                        <p>Hedef ROC AUC</p>
+                    </div>
+                </div>
+
+                <div class="info-box">
+                    <h3>⚙️ Komut Satırı</h3>
+                    <p>Aşağıdaki komut ile hızlıca yeni veri üretebilirsiniz:</p>
+                    <pre>python data_generator.py --samples 3000 --strategy hybrid --preview</pre>
+                    <p>Çıktı <strong>synthetic_exoplanets.csv</strong> dosyasına kaydedilir.</p>
+                </div>
+
+                <div class="info-box" style="background: #d4edda; border-color: #28a745;">
+                    <h3>🎨 Streamlit Laboratuvarı</h3>
+                    <p>Daha ileri deneyler için <strong>streamlit_app.py</strong> içindeki "🧪 Veri Üretimi" sekmesini
+                       kullanarak örnek sayısını, hedef sınıf oranını ve üretim stratijisini interaktif olarak belirleyin.</p>
+                    <ul>
+                        <li>Veri kaynağı olarak varsayılan Kepler setini veya kendi CSV'nizi seçin</li>
+                        <li>Aykırı değerleri otomatik kırpma seçeneğiyle kaliteli dağılımlar elde edin</li>
+                        <li>Üretilen veriyi tek tıkla CSV olarak indirin</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>🌌 Ötegezegen Keşif Sistemi | NASA Kepler Verileri | © 2025</p>
+            <p style="margin-top: 10px; opacity: 0.8;">Yapay Zeka ile Desteklenmiştir</p>
+        </footer>
+    </div>
+
+    <script>
+        // Sekme değiştirme
+        function showTab(tabName) {
+            // Tüm sekmeleri gizle
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Seçili sekmeyi göster
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+
+            // Model bilgileri sekmesiyse, bilgileri yükle
+            if (tabName === 'info') {
+                loadModelInfo();
+            }
+        }
+
+        // Manuel tahmin formu
+        document.getElementById('predictForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // Yükleniyor göster
+            document.getElementById('loading').classList.add('active');
+            document.getElementById('result').style.display = 'none';
+
+            // Form verilerini al
+            const formData = new FormData(e.target);
+
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                // Yükleniyor gizle
+                document.getElementById('loading').classList.remove('active');
+
+                if (result.success) {
+                    displayResult(result);
+                } else {
+                    alert('Hata: ' + result.error);
+                }
+            } catch (error) {
+                document.getElementById('loading').classList.remove('active');
+                alert('Bir hata oluştu: ' + error);
+            }
+        });
+
+        // Sonucu göster
+        function displayResult(result) {
+            const resultDiv = document.getElementById('result');
+            const isExoplanet = result.is_exoplanet;
+            const probability = (result.probability_exoplanet * 100).toFixed(2);
+            const confidence = (result.confidence * 100).toFixed(2);
+
+            resultDiv.className = 'result-box ' + (isExoplanet ? 'exoplanet' : 'not-exoplanet');
+            
+            resultDiv.innerHTML = `
+                <h2>${isExoplanet ? '🎉 ÖTEGEZEGEN!' : '❌ ÖTEGEZEGEN DEĞİL'}</h2>
+                <p class="probability">Ötegezegen Olma Olasılığı: ${probability}%</p>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: ${probability}%">${probability}%</div>
+                </div>
+                <p style="font-size: 1.2em; margin-top: 15px;">
+                    Güven Skoru: ${confidence}%
+                </p>
+                <p style="margin-top: 20px; opacity: 0.9;">
+                    ${isExoplanet 
+                        ? 'Bu veri noktası doğrulanmış bir ötegezegen özelliklerine sahip!' 
+                        : 'Bu veri noktası ötegezegen olarak sınıflandırılmadı.'}
+                </p>
+                <p style="margin-top: 10px; font-size: 0.9em; opacity: 0.8;">
+                    Tahmin Zamanı: ${result.timestamp}
+                </p>
+            `;
+
+            resultDiv.style.display = 'block';
+        }
+
+        // CSV yükleme
+        async function uploadCSV(input) {
+            if (!input.files || !input.files[0]) return;
+
+            const file = input.files[0];
+            
+            // Dosya türü kontrolü
+            if (!file.name.toLowerCase().endsWith('.csv')) {
+                alert('❌ Geçersiz dosya türü!\n\nSadece CSV dosyaları kabul edilir.\n\nYüklemeye çalıştığınız dosya: ' + file.name);
+                input.value = ''; // Input'u temizle
+                return;
+            }
+            
+            // Dosya boyutu kontrolü (100 MB)
+            const maxSize = 100 * 1024 * 1024; // 100 MB in bytes
+            if (file.size > maxSize) {
+                alert('❌ Dosya çok büyük!\n\nMaksimum dosya boyutu: 100 MB\n\nDosya boyutu: ' + (file.size / (1024 * 1024)).toFixed(2) + ' MB');
+                input.value = ''; // Input'u temizle
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            // Anonimleştirme seçeneğini ekle
+            const anonymize = document.getElementById('anonymizeData').checked;
+            formData.append('anonymize', anonymize ? 'true' : 'false');
+
+            document.getElementById('csvLoading').classList.add('active');
+            document.getElementById('csvResults').innerHTML = '';
+
+            try {
+                const response = await fetch('/predict_csv', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                document.getElementById('csvLoading').classList.remove('active');
+
+                if (result.success) {
+                    displayCSVResults(result);
+                } else {
+                    alert('Hata: ' + result.error);
+                }
+            } catch (error) {
+                document.getElementById('csvLoading').classList.remove('active');
+                alert('Bir hata oluştu: ' + error);
+            } finally {
+                input.value = ''; // Aynı dosyanın tekrar yüklenmesine izin vermek için
+            }
+        }
+
+        // CSV sonuçlarını göster
+        function displayCSVResults(result) {
+            const resultsDiv = document.getElementById('csvResults');
+
+            const exoplanetPercentage = ((result.exoplanets_found / result.total_rows) * 100).toFixed(1);
+            const avgConfidence = (result.average_confidence * 100).toFixed(2);
+            
+            // Anonimleştirme bilgisi
+            let anonymizationInfo = '';
+            if (result.anonymization && result.anonymization.enabled) {
+                anonymizationInfo = `
+                    <div style="background: #e8f5e9; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #4caf50;">
+                        <strong>🔒 Veri Anonimleştirme Uygulandı</strong>
+                        <p style="margin: 5px 0 0 0;">
+                            ${result.anonymization.columns_anonymized} sütun anonimleştirildi: 
+                            <span style="font-family: monospace; color: #1565c0;">
+                                ${result.anonymization.column_names.join(', ')}
+                            </span>
+                        </p>
+                    </div>
+                `;
+            }
+
+            let html = `
+                <div style="background: #f5f5f5; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                    <strong>📁 Dosya:</strong> ${result.filename || 'Yüklenen dosya'}
+                </div>
+                
+                ${anonymizationInfo}
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3>${result.total_rows}</h3>
+                        <p>Toplam Analiz</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>${result.exoplanets_found}</h3>
+                        <p>Ötegezegen Bulundu</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>${exoplanetPercentage}%</h3>
+                        <p>Ötegezegen Oranı</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>${avgConfidence}%</h3>
+                        <p>Ortalama Güven</p>
+                    </div>
+                </div>
+
+                <h3 style="margin: 30px 0 15px 0;">📊 Detaylı Sonuçlar (İlk 100)</h3>
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; background: white;">
+                        <thead>
+                            <tr style="background: #667eea; color: white;">
+                                <th style="padding: 12px; text-align: left;">Satır</th>
+                                <th style="padding: 12px; text-align: left;">Sonuç</th>
+                                <th style="padding: 12px; text-align: left;">Olasılık</th>
+                                <th style="padding: 12px; text-align: left;">Güven</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            result.results.forEach(row => {
+                const bgColor = row.is_exoplanet ? '#d4edda' : '#f8d7da';
+                const textColor = row.is_exoplanet ? '#155724' : '#721c24';
+                const icon = row.is_exoplanet ? '✅' : '❌';
+
+                html += `
+                    <tr style="background: ${bgColor}; color: ${textColor};">
+                        <td style="padding: 10px;">${row.row}</td>
+                        <td style="padding: 10px;">${icon} ${row.is_exoplanet ? 'Ötegezegen' : 'Değil'}</td>
+                        <td style="padding: 10px;">${(row.probability * 100).toFixed(2)}%</td>
+                        <td style="padding: 10px;">${(row.confidence * 100).toFixed(2)}%</td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+
+            resultsDiv.innerHTML = html;
+        }
+
+        // Model bilgilerini yükle
+        async function loadModelInfo() {
+            try {
+                const response = await fetch('/model_info');
+                const result = await response.json();
+
+                if (result.success) {
+                    let html = '';
+                    result.top_features.forEach((feature, index) => {
+                        const percentage = (feature.importance * 100).toFixed(2);
+                        html += `
+                            <div class="feature-item">
+                                <strong>#${index + 1} ${feature.name}</strong><br>
+                                Önem: ${percentage}%
+                            </div>
+                        `;
+                    });
+
+                    document.getElementById('featureList').innerHTML = html;
+                }
+            } catch (error) {
+                console.error('Model bilgileri yüklenemedi:', error);
+            }
+        }
+
+        // Sayfa yüklendiğinde model bilgilerini yükle
+        window.addEventListener('load', () => {
+            loadModelInfo();
+        });
+    </script>
+</body>
+</html>
