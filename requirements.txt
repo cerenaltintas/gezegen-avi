@@ -8,4 +8,5 @@ seaborn==0.13.2
 flask==3.0.3
 joblib==1.4.2
 plotly==5.24.1
+shap==0.45.1
 streamlit
