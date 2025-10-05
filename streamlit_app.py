@@ -2451,12 +2451,13 @@ def show_model_analysis_page(model, scaler, feature_names, anomaly_detector):
         
         with col1:
             st.markdown("**🎯 Karmaşıklık Matrisi**")
-            cm_data = np.array([[1293, 71], [35, 514]])
-            
+            # Doğru confusion matrix: x ekseni Gerçek, y ekseni Tahmin
+            # [[TN, FN], [FP, TP]]
+            cm_data = np.array([[35, 1293], [514, 71]])
             fig = go.Figure(data=go.Heatmap(
                 z=cm_data,
-                x=['Tahmin: Hayır', 'Tahmin: Evet'],
-                y=['Gerçek: Hayır', 'Gerçek: Evet'],
+                x=['Gerçek: Hayır', 'Gerçek: Evet'],
+                y=['Tahmin: Hayır', 'Tahmin: Evet'],
                 text=cm_data,
                 texttemplate="%{text}",
                 colorscale='Blues',
