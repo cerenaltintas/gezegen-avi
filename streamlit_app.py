@@ -1973,13 +1973,20 @@ def show_live_data_page(model, scaler, feature_names, anomaly_detector):
             
             # Renklendirme için stil
             def highlight_probability(val):
+                """Probability-based styling: darker green shades for higher confidence.
+                - >= 0.98: deep green with white text
+                - >= 0.95: strong green with white text
+                - >= 0.90: medium green (still readable with dark text)
+                """
                 if pd.isna(val):
                     return ''
                 if isinstance(val, (int, float)):
-                    if val >= 0.95:
-                        return 'background-color: #d4edda; font-weight: bold'
+                    if val >= 0.98:
+                        return 'background-color: #1b5e20; color: #ffffff; font-weight: 600'  # deep green
+                    elif val >= 0.95:
+                        return 'background-color: #2e7d32; color: #ffffff; font-weight: 600'  # strong green
                     elif val >= 0.90:
-                        return 'background-color: #d1ecf1'
+                        return 'background-color: #a5d6a7; color: #0b3d0b'  # medium green
                 return ''
             
             styled_df = top_exoplanets[display_cols].style.applymap(
