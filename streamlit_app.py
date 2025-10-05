@@ -1210,8 +1210,17 @@ def show_prediction_page(model, scaler, feature_names, explainer, anomaly_detect
                         st.markdown("**📋 Detaylı Katkı Tablosu**")
                         display_df = contrib_df[['feature', 'value', 'importance', 'percentage', 'weighted_contribution']].head(15)
                         display_df.columns = ['Özellik', 'Değer', 'Model Önemi', 'Yüzde (%)', 'Ağırlıklı Katkı']
-                        display_df['Yüzde (%)'] = display_df['Yüzde (%)'].apply(lambda x: f"{x:.2f}%")
-                        st.dataframe(display_df, use_container_width=True)
+                        # Yüzde (%) kolonunu sayısal bırakıp görüntü formatını % ile ayarla
+                        st.dataframe(
+                            display_df,
+                            use_container_width=True,
+                            column_config={
+                                'Yüzde (%)': st.column_config.NumberColumn('Yüzde (%)', format='%.2f%%'),
+                                'Değer': st.column_config.NumberColumn('Değer', format='%.3f'),
+                                'Model Önemi': st.column_config.NumberColumn('Model Önemi', format='%.4f'),
+                                'Ağırlıklı Katkı': st.column_config.NumberColumn('Ağırlıklı Katkı', format='%.4f'),
+                            }
+                        )
                         
                     else:
                         st.warning("Özellik katkı analizi mevcut değil.")
@@ -2099,13 +2108,14 @@ def show_batch_analysis_page(model, scaler, feature_names, anomaly_detector):
                         novelty_flag = novelty.get('is_novel_candidate', False)
                         novelty_score = novelty.get('novelty_score')
 
+                        # Not: Yüzdelikleri string yerine sayısal (float) olarak tutuyoruz ki tablo sıralaması sayısal çalışsın
                         results.append({
                             'Satır': idx + 1,
                             'Ötegezegen': 'Evet ✅' if result['is_exoplanet'] else 'Hayır ❌',
-                            'Olasılık (%)': f"{result['probability_exoplanet']*100:.2f}",
-                            'Güven (%)': f"{result['confidence']*100:.2f}",
+                            'Olasılık (%)': result['probability_exoplanet'] * 100.0,
+                            'Güven (%)': result['confidence'] * 100.0,
                             'Yeni Aday': '🚨 Evet' if novelty_flag else '✅ Uyumlu',
-                            'Novelty Skoru': f"{novelty_score:.3f}" if novelty_score is not None else '—'
+                            'Novelty Skoru': float(novelty_score) if novelty_score is not None else np.nan
                         })
                         
                         # Progress güncelle
@@ -2125,7 +2135,8 @@ def show_batch_analysis_page(model, scaler, feature_names, anomaly_detector):
                     total = len(results_df)
                     exoplanets = len(results_df[results_df['Ötegezegen'] == 'Evet ✅'])
                     non_exoplanets = total - exoplanets
-                    avg_confidence = results_df['Güven (%)'].str.rstrip('%').astype(float).mean()
+                    # Artık 'Güven (%)' sayısal olduğu için doğrudan ortalama alınabilir
+                    avg_confidence = results_df['Güven (%)'].mean()
                     new_candidate_count = (results_df['Yeni Aday'] == '🚨 Evet').sum()
                     
                     col1, col2, col3, col4 = st.columns(4)
@@ -2160,8 +2171,8 @@ def show_batch_analysis_page(model, scaler, feature_names, anomaly_detector):
                         st.plotly_chart(fig, use_container_width=True)
                     
                     with col2:
-                        # Güven skoru histogramı
-                        confidence_values = results_df['Güven (%)'].str.rstrip('%').astype(float)
+                        # Güven skoru histogramı (sayısal)
+                        confidence_values = results_df['Güven (%)']
                         fig = go.Figure(data=[go.Histogram(
                             x=confidence_values,
                             nbinsx=20,
@@ -2176,12 +2187,29 @@ def show_batch_analysis_page(model, scaler, feature_names, anomaly_detector):
                     
                     # Detaylı sonuçlar tablosu
                     st.subheader("📋 Detaylı Sonuçlar")
-                    st.dataframe(results_df, use_container_width=True)
+                    # Yüzde sütunlarını sayısal tutup görüntü formatını % ile ayarlıyoruz
+                    st.dataframe(
+                        results_df,
+                        use_container_width=True,
+                        column_config={
+                            'Olasılık (%)': st.column_config.NumberColumn('Olasılık (%)', format='%.2f%%'),
+                            'Güven (%)': st.column_config.NumberColumn('Güven (%)', format='%.2f%%'),
+                            'Novelty Skoru': st.column_config.NumberColumn('Novelty Skoru', format='%.3f')
+                        }
+                    )
 
                     if new_candidate_count > 0:
                         st.markdown("### 🧭 Potansiyel Yeni Adaylar")
                         novel_subset = results_df[results_df['Yeni Aday'] == '🚨 Evet']
-                        st.dataframe(novel_subset, use_container_width=True)
+                        st.dataframe(
+                            novel_subset,
+                            use_container_width=True,
+                            column_config={
+                                'Olasılık (%)': st.column_config.NumberColumn('Olasılık (%)', format='%.2f%%'),
+                                'Güven (%)': st.column_config.NumberColumn('Güven (%)', format='%.2f%%'),
+                                'Novelty Skoru': st.column_config.NumberColumn('Novelty Skoru', format='%.3f')
+                            }
+                        )
                     
                     # İndirme butonu
                     csv = results_df.to_csv(index=False)
